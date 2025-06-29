@@ -2,10 +2,9 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { getUserByEmail } from "@/lib/users";
+import type { AuthOptions } from "next-auth";
 
-// TODO: fix types
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const authOptions: any = {
+export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",

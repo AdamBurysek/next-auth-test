@@ -50,7 +50,7 @@ export default function TodosPage() {
     );
   }
 
-  const addTodo = () => {
+  const addTodo = async () => {
     if (newTodo.trim() === "") return;
 
     const todo: Todo = {
@@ -59,6 +59,20 @@ export default function TodosPage() {
       completed: false,
       createdAt: new Date(),
     };
+
+    const userEmail = session!.user?.email;
+    if (!userEmail) {
+      router.push("/login");
+      return;
+    }
+
+    await fetch("/api/todos", {
+      method: "POST",
+      body: JSON.stringify({
+        ...todo,
+        email: session!.user?.email,
+      }),
+    });
 
     setTodos([todo, ...todos]);
     setNewTodo("");

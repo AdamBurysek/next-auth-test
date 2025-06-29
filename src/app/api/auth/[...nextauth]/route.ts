@@ -38,6 +38,12 @@ export const authOptions: AuthOptions = {
     strategy: "jwt",
   },
   secret: process.env.NEXTAUTH_SECRET,
+  callbacks: {
+    async redirect() {
+      console.log("redirect");
+      return "/mainpage";
+    },
+  },
 };
 
 const handler = NextAuth(authOptions);

@@ -203,11 +203,11 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.confirmPassword}
-                  </p>
-                )}
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.confirmPassword}
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}

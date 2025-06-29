@@ -2,11 +2,10 @@
 
 import type React from "react";
 
-import { signIn, getSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
-import { useAuth, User } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,8 +14,6 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-
-  const { setUser } = useAuth();
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -49,8 +46,6 @@ export default function LoginPage() {
       });
 
       if (res?.ok) {
-        const session = await getSession();
-        setUser(session?.user as User);
         router.push("/");
       } else {
         setErrors({ general: "Neplatné přihlašovací údaje" });

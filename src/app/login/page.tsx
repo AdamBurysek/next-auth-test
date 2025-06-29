@@ -1,73 +1,82 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { signIn } from "next-auth/react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Eye, EyeOff } from "lucide-react"
+import { signIn, getSession } from "next-auth/react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
+import { useAuth, User } from "@/context/AuthContext";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [errors, setErrors] = useState<{ [key: string]: string }>({})
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
+  const { setUser } = useAuth();
 
   const validateForm = () => {
-    const newErrors: { [key: string]: string } = {}
+    const newErrors: { [key: string]: string } = {};
 
     if (!email.trim()) {
-      newErrors.email = "Email je povinný"
+      newErrors.email = "Email je povinný";
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Email není platný"
+      newErrors.email = "Email není platný";
     }
 
     if (!password) {
-      newErrors.password = "Heslo je povinné"
+      newErrors.password = "Heslo je povinné";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleLogin = async () => {
-    if (!validateForm()) return
+    if (!validateForm()) return;
 
-    setIsLoading(true)
-    setErrors({})
+    setIsLoading(true);
+    setErrors({});
 
     try {
       const res = await signIn("credentials", {
         redirect: false,
         email,
         password,
-      })
+      });
 
       if (res?.ok) {
-        router.push("/")
+        const session = await getSession();
+        setUser(session?.user as User);
+        router.push("/");
       } else {
-        setErrors({ general: "Neplatné přihlašovací údaje" })
+        setErrors({ general: "Neplatné přihlašovací údaje" });
       }
     } catch (error) {
-      setErrors({ general: "Chyba při přihlašování" + error })
+      setErrors({ general: "Chyba při přihlašování" + error });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      handleLogin()
+      handleLogin();
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Přihlášení</h2>
-        <p className="mt-2 text-center text-sm text-gray-600">Přihlaste se do svého účtu</p>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          Přihlášení
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Přihlaste se do svého účtu
+        </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -82,7 +91,10 @@ export default function LoginPage() {
 
             {/* Email Input */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Email
               </label>
               <div className="mt-1">
@@ -98,13 +110,18 @@ export default function LoginPage() {
                   } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
                   disabled={isLoading}
                 />
-                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                )}
               </div>
             </div>
 
             {/* Password Input */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Heslo
               </label>
               <div className="mt-1 relative">
@@ -133,13 +150,18 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
-                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+              )}
             </div>
 
             {/* Forgot Password Link */}
             <div className="flex items-center justify-end">
               <div className="text-sm">
-                <a href="/forgot-password" className="font-medium text-blue-600 hover:text-blue-500">
+                <a
+                  href="/forgot-password"
+                  className="font-medium text-blue-600 hover:text-blue-500"
+                >
                   Zapomněli jste heslo?
                 </a>
               </div>
@@ -225,7 +247,10 @@ export default function LoginPage() {
             <div className="text-center">
               <p className="text-sm text-gray-600">
                 Nemáte účet?{" "}
-                <a href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+                <a
+                  href="/register"
+                  className="font-medium text-blue-600 hover:text-blue-500"
+                >
                   Zaregistrujte se
                 </a>
               </p>
@@ -234,5 +259,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

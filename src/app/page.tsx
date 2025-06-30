@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
@@ -108,7 +109,6 @@ export default function LandingPage() {
                     {/* User Info Mobile */}
                     <div className="flex items-center space-x-3 px-3 py-2">
                       {session.user?.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={session.user.image || "/placeholder.svg"}
                           alt="Profile"

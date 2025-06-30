@@ -21,7 +21,7 @@ interface Todo {
   id: number;
   text: string;
   completed: boolean;
-  createdAt: Date;
+  created_at: Date;
 }
 
 export default function TodosPage() {
@@ -33,11 +33,21 @@ export default function TodosPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
 
+  const fetchTodos = async () => {
+    const response = await fetch("/api/todos");
+    const data = await response.json();
+    setTodos(data);
+  };
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
     }
   }, [status, router]);
+
+  useEffect(() => {
+    fetchTodos();
+  }, []);
 
   if (status === "loading" || status === "unauthenticated") {
     return (
@@ -57,7 +67,7 @@ export default function TodosPage() {
       id: Date.now(),
       text: newTodo.trim(),
       completed: false,
-      createdAt: new Date(),
+      created_at: new Date(),
     };
 
     const userEmail = session!.user?.email;
@@ -295,7 +305,7 @@ export default function TodosPage() {
                         {todo.text}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {todo.createdAt.toLocaleDateString("cs-CZ", {
+                        {new Date(todo.created_at).toLocaleString("cs-CZ", {
                           day: "numeric",
                           month: "long",
                           year: "numeric",

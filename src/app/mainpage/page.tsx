@@ -4,7 +4,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useOptimistic, useState } from "react";
 import {
   Plus,
   Check,
@@ -21,17 +21,45 @@ interface Todo {
   id: number;
   text: string;
   completed: boolean;
-  created_at: Date;
+  created_at: Date | null;
 }
+
+type Action =
+  | { type: "add"; todo: Todo }
+  | { type: "delete"; todo: Todo }
+  | { type: "update"; todo: Todo };
 
 export default function TodosPage() {
   const sessionData = useSession();
   const session = sessionData?.data;
   const status = sessionData?.status || "loading";
   const router = useRouter();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
+
+  const [optimisticTodos, setOptimisticTodos] = useOptimistic(
+    todos,
+    (currentTodos, action: Action) => {
+      if (action.type === "add") {
+        return [...currentTodos, action.todo];
+      } else if (action.type === "delete") {
+        return currentTodos.filter((todo) => todo.id !== action.todo.id);
+      } else if (action.type === "update") {
+        return currentTodos.map((todo) =>
+          todo.id === action.todo.id
+            ? {
+                ...todo,
+                completed: action.todo.completed,
+                text: action.todo.text,
+              }
+            : todo,
+        );
+      }
+      return currentTodos;
+    },
+  );
 
   const fetchTodos = async () => {
     const response = await fetch("/api/todos");
@@ -76,28 +104,86 @@ export default function TodosPage() {
       return;
     }
 
-    await fetch("/api/todos", {
-      method: "POST",
-      body: JSON.stringify({
-        ...todo,
-        email: session!.user?.email,
-      }),
+    startTransition(async () => {
+      setOptimisticTodos({ type: "add", todo: todo });
+      try {
+        const res = await fetch("/api/todos", {
+          method: "POST",
+          body: JSON.stringify({
+            ...todo,
+            email: userEmail,
+          }),
+        });
+        if (res.ok) {
+          setTodos([todo, ...todos]);
+        }
+        if (!res.ok) {
+          throw new Error("Failed to add todo");
+        }
+      } catch (error) {
+        console.error("Error adding todo:", error);
+      }
     });
 
-    setTodos([todo, ...todos]);
     setNewTodo("");
   };
 
-  const toggleTodo = (id: number) => {
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo,
-      ),
-    );
+  const updateTodo = async (id: number, text: string, completed: boolean) => {
+    startTransition(async () => {
+      setOptimisticTodos({
+        type: "update",
+        todo: { id: id, text: text, completed: completed, created_at: null },
+      });
+      try {
+        const res = await fetch("/api/todos", {
+          method: "PUT",
+          body: JSON.stringify({
+            id,
+            text,
+            completed,
+          }),
+        });
+        if (res.ok) {
+          setTodos(
+            todos.map((todo) =>
+              todo.id === id
+                ? { ...todo, completed: completed, text: text }
+                : todo,
+            ),
+          );
+        }
+        if (!res.ok) {
+          throw new Error("Failed to update todo");
+        }
+      } catch (error) {
+        console.error("Error updating todo:", error);
+      }
+    });
   };
 
-  const deleteTodo = (id: number) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
+  const deleteTodo = async (id: number) => {
+    startTransition(async () => {
+      setOptimisticTodos({
+        type: "delete",
+        todo: todos.find((todo) => todo.id === id)!,
+      });
+      try {
+        const res = await fetch("/api/todos", {
+          method: "DELETE",
+          body: JSON.stringify({
+            id,
+          }),
+        });
+        if (res.ok) {
+          setTodos(todos.filter((todo) => todo.id !== id));
+        }
+        if (!res.ok) {
+          throw new Error("Failed to delete todo");
+        }
+      } catch (error) {
+        console.error("Error deleting todo:", error);
+      }
+    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -277,14 +363,16 @@ export default function TodosPage() {
                 </p>
               </div>
             ) : (
-              todos.map((todo) => (
+              optimisticTodos.map((todo, index) => (
                 <div
-                  key={todo.id}
+                  key={index}
                   className="p-4 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center space-x-4">
                     <button
-                      onClick={() => toggleTodo(todo.id)}
+                      onClick={() =>
+                        updateTodo(todo.id, todo.text, !todo.completed)
+                      }
                       className={`flex-shrink-0 h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
                         todo.completed
                           ? "bg-green-500 border-green-500 text-white"
@@ -305,13 +393,16 @@ export default function TodosPage() {
                         {todo.text}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {new Date(todo.created_at).toLocaleString("cs-CZ", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {new Date(todo.created_at || "").toLocaleString(
+                          "cs-CZ",
+                          {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )}
                       </p>
                     </div>
 

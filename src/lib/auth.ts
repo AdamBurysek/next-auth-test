@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 import { getUserByEmail } from "@/lib/users";
@@ -44,8 +45,20 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    async redirect() {
-      return "/todopage";
+    async jwt({ token, user, account }) {
+      // Když je nový login, uložíme provider do tokenu
+      if (account && user) {
+        token.provider = account.provider;
+      }
+      return token;
+    },
+
+    async redirect(params: { url: string; baseUrl: string } & { token?: any }) {
+      const token = (params as any).token;
+      if (token?.provider === "google") {
+        return "/todopage";
+      }
+      return params.baseUrl;
     },
   },
 };

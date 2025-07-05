@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { auth } from "@/lib/auth";
 
-export async function GET() {
+export const GET = async () => {
   const session = await auth();
 
   if (!session || !session.user?.email) {
@@ -26,9 +26,9 @@ export async function GET() {
       { status: 500 },
     );
   }
-}
+};
 
-export async function POST(req: NextRequest) {
+export const POST = async (req: NextRequest) => {
   const { id, text, completed, created_at, email } = await req.json();
 
   try {
@@ -46,9 +46,9 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+};
 
-export async function DELETE(req: NextRequest) {
+export const DELETE = async (req: NextRequest) => {
   const session = await auth();
   if (!session || !session.user?.email) {
     return NextResponse.json({ error: "Neautorizováno" }, { status: 401 });
@@ -70,9 +70,9 @@ export async function DELETE(req: NextRequest) {
     console.error("DB DELETE error:", err);
     return NextResponse.json({ error: "Chyba při mazání" }, { status: 500 });
   }
-}
+};
 
-export async function PUT(req: NextRequest) {
+export const PUT = async (req: NextRequest) => {
   const session = await auth();
   if (!session || !session.user?.email) {
     return NextResponse.json({ error: "Neautorizováno" }, { status: 401 });
@@ -99,4 +99,4 @@ export async function PUT(req: NextRequest) {
       { status: 500 },
     );
   }
-}
+};

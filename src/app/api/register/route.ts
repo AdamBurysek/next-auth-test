@@ -1,6 +1,6 @@
 import { createUser, getUserByEmail } from "@/lib/users";
 
-export async function POST(req: Request) {
+export const POST = async (req: Request) => {
   const { email, password, name } = await req.json();
 
   const exists = await getUserByEmail(email);
@@ -9,4 +9,4 @@ export async function POST(req: Request) {
   await createUser(email, name, password);
 
   return new Response("Vytvořeno", { status: 200 });
-}
+};

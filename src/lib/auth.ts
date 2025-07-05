@@ -50,11 +50,11 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
-export function auth(
+export const auth = (
   ...args:
     | [GetServerSidePropsContext["req"], GetServerSidePropsContext["res"]]
     | [NextApiRequest, NextApiResponse]
     | []
-) {
+) => {
   return getServerSession(...args, authOptions);
-}
+};

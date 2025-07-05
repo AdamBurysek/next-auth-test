@@ -29,7 +29,7 @@ type Action =
   | { type: "delete"; todo: Todo }
   | { type: "update"; todo: Todo };
 
-export default function TodosPage() {
+const TodosPage = () => {
   const sessionData = useSession();
   const session = sessionData?.data;
   const status = sessionData?.status || "loading";
@@ -466,4 +466,6 @@ export default function TodosPage() {
       </main>
     </div>
   );
-}
+};
+
+export default TodosPage;

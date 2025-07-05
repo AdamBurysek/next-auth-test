@@ -6,7 +6,7 @@ import { User, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 
-export default function LandingPage() {
+const LandingPage = () => {
   const sessionData = useSession();
   const session = sessionData?.data;
   const status = sessionData?.status || "loading";
@@ -207,4 +207,6 @@ export default function LandingPage() {
       </main>
     </div>
   );
-}
+};
+
+export default LandingPage;

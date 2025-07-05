@@ -62,9 +62,16 @@ export default function TodosPage() {
   );
 
   const fetchTodos = async () => {
-    const response = await fetch("/api/todos");
-    const data = await response.json();
-    setTodos(data);
+    try {
+      const res = await fetch("/api/todos");
+      if (res.ok) {
+        const data = await res.json();
+        setTodos(data);
+      }
+      if (!res.ok) throw new Error("Chyba při načítání úkolů");
+    } catch (error) {
+      console.error("Chyba při načítání úkolů:", error);
+    }
   };
 
   useEffect(() => {

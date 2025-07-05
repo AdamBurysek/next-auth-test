@@ -38,6 +38,7 @@ export default function TodosPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
+  const [loadingTodos, setLoadingTodos] = useState(true);
 
   const [optimisticTodos, setOptimisticTodos] = useOptimistic(
     todos,
@@ -67,10 +68,12 @@ export default function TodosPage() {
       if (res.ok) {
         const data = await res.json();
         setTodos(data);
+        setLoadingTodos(false);
       }
       if (!res.ok) throw new Error("Chyba při načítání úkolů");
     } catch (error) {
       console.error("Chyba při načítání úkolů:", error);
+      setLoadingTodos(false);
     }
   };
 
@@ -84,7 +87,7 @@ export default function TodosPage() {
     fetchTodos();
   }, []);
 
-  if (status === "loading" || status === "unauthenticated") {
+  if (status === "loading" || status === "unauthenticated" || loadingTodos) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

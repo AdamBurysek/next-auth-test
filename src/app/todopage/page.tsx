@@ -202,8 +202,8 @@ const TodosPage = () => {
     }
   };
 
-  const completedCount = todos.filter((todo) => todo.completed).length;
-  const totalCount = todos.length;
+  const completedCount = optimisticTodos.filter((todo) => todo.completed).length;
+  const totalCount = optimisticTodos.length;
 
   const handleLogout = () => {
     signOut({ callbackUrl: "/" });
@@ -429,7 +429,7 @@ const TodosPage = () => {
           </div>
 
           {/* Stats Footer */}
-          {todos.length > 0 && (
+          {optimisticTodos.length > 0 && (
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
               <div className="flex justify-between items-center text-sm text-gray-600">
                 <span>Celkem úkolů: {totalCount}</span>
@@ -441,7 +441,7 @@ const TodosPage = () => {
         </div>
 
         {/* Quick Stats Cards */}
-        {todos.length > 0 && (
+        {optimisticTodos.length > 0 && (
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white rounded-lg shadow-sm p-4 text-center">
               <div className="text-2xl font-bold text-blue-600">

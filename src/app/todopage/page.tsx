@@ -44,7 +44,7 @@ const TodosPage = () => {
     todos,
     (currentTodos, action: Action) => {
       if (action.type === "add") {
-        return [...currentTodos, action.todo];
+        return [action.todo, ...currentTodos];
       } else if (action.type === "delete") {
         return currentTodos.filter((todo) => todo.id !== action.todo.id);
       } else if (action.type === "update") {
@@ -87,17 +87,6 @@ const TodosPage = () => {
     fetchTodos();
   }, []);
 
-  if (status === "loading" || status === "unauthenticated" || loadingTodos) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <div className="text-gray-600">Načítání...</div>
-        </div>
-      </div>
-    );
-  }
-
   const addTodo = async () => {
     if (newTodo.trim() === "") return;
 
@@ -125,7 +114,7 @@ const TodosPage = () => {
           }),
         });
         if (res.ok) {
-          setTodos([todo, ...todos]);
+          setTodos((prev) => [todo, ...prev]);
         }
         if (!res.ok) {
           throw new Error("Failed to add todo");
@@ -202,12 +191,25 @@ const TodosPage = () => {
     }
   };
 
-  const completedCount = optimisticTodos.filter((todo) => todo.completed).length;
+  const completedCount = optimisticTodos.filter(
+    (todo) => todo.completed,
+  ).length;
   const totalCount = optimisticTodos.length;
 
   const handleLogout = () => {
     signOut({ callbackUrl: "/" });
   };
+
+  if (status === "loading" || status === "unauthenticated" || loadingTodos) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="text-gray-600">Načítání...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -348,7 +350,7 @@ const TodosPage = () => {
 
           {/* Todos List */}
           <div className="divide-y divide-gray-200">
-            {todos.length === 0 ? (
+            {optimisticTodos.length === 0 ? (
               <div className="p-8 text-center">
                 <div className="text-gray-400 mb-4">
                   <svg

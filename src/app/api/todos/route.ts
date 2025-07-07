@@ -85,13 +85,16 @@ export const PUT = async (req: NextRequest) => {
   }
 
   try {
-    await pool.query(
+    const result = await pool.query(
       `UPDATE todos SET text = $1, completed = $2
-       WHERE id = $3 AND email = $4`,
+       WHERE id = $3 AND email = $4
+       RETURNING id, text, completed, created_at`,
       [text, completed, id, session.user.email],
     );
 
-    return NextResponse.json({ success: true });
+    const updatedTodo = result.rows[0];
+
+    return NextResponse.json(updatedTodo);
   } catch (err) {
     console.error("DB UPDATE error:", err);
     return NextResponse.json(

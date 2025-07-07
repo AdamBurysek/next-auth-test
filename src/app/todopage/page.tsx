@@ -2,9 +2,8 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import type React from "react";
-import { startTransition, useEffect, useOptimistic, useState } from "react";
+import { useState } from "react";
 import {
   Plus,
   Check,
@@ -16,191 +15,43 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import Link from "next/link";
-
-interface Todo {
-  id: number;
-  text: string;
-  completed: boolean;
-  created_at: Date | null;
-}
-
-type Action =
-  | { type: "add"; todo: Todo }
-  | { type: "delete"; todo: Todo }
-  | { type: "update"; todo: Todo };
+import { useTodos } from "../hooks/useTodos";
 
 const TodosPage = () => {
   const sessionData = useSession();
   const session = sessionData?.data;
   const status = sessionData?.status || "loading";
-  const router = useRouter();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
-  const [loadingTodos, setLoadingTodos] = useState(true);
 
-  const [optimisticTodos, setOptimisticTodos] = useOptimistic(
-    todos,
-    (currentTodos, action: Action) => {
-      if (action.type === "add") {
-        return [action.todo, ...currentTodos];
-      } else if (action.type === "delete") {
-        return currentTodos.filter((todo) => todo.id !== action.todo.id);
-      } else if (action.type === "update") {
-        return currentTodos.map((todo) =>
-          todo.id === action.todo.id
-            ? {
-                ...todo,
-                completed: action.todo.completed,
-                text: action.todo.text,
-              }
-            : todo,
-        );
-      }
-      return currentTodos;
-    },
-  );
+  const { todos, isLoading, addTodo, updateTodo, deleteTodo } = useTodos();
 
-  const fetchTodos = async () => {
-    try {
-      const res = await fetch("/api/todos");
-      if (res.ok) {
-        const data = await res.json();
-        setTodos(data);
-        setLoadingTodos(false);
-      }
-      if (!res.ok) throw new Error("Chyba při načítání úkolů");
-    } catch (error) {
-      console.error("Chyba při načítání úkolů:", error);
-      setLoadingTodos(false);
-    }
-  };
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
-
-  useEffect(() => {
-    fetchTodos();
-  }, []);
-
-  const addTodo = async () => {
+  const handleAddTodoClick = () => {
     if (newTodo.trim() === "") return;
-
-    const todo: Todo = {
+    addTodo.mutate({
       id: Date.now(),
-      text: newTodo.trim(),
+      text: newTodo,
       completed: false,
       created_at: new Date(),
-    };
-
-    const userEmail = session!.user?.email;
-    if (!userEmail) {
-      router.push("/login");
-      return;
-    }
-
-    startTransition(async () => {
-      setOptimisticTodos({ type: "add", todo: todo });
-      try {
-        const res = await fetch("/api/todos", {
-          method: "POST",
-          body: JSON.stringify({
-            ...todo,
-            email: userEmail,
-          }),
-        });
-        if (res.ok) {
-          setTodos((prev) => [todo, ...prev]);
-        }
-        if (!res.ok) {
-          throw new Error("Failed to add todo");
-        }
-      } catch (error) {
-        console.error("Error adding todo:", error);
-      }
     });
-
     setNewTodo("");
-  };
-
-  const updateTodo = async (id: number, text: string, completed: boolean) => {
-    startTransition(async () => {
-      setOptimisticTodos({
-        type: "update",
-        todo: { id: id, text: text, completed: completed, created_at: null },
-      });
-      try {
-        const res = await fetch("/api/todos", {
-          method: "PUT",
-          body: JSON.stringify({
-            id,
-            text,
-            completed,
-          }),
-        });
-        if (res.ok) {
-          setTodos(
-            todos.map((todo) =>
-              todo.id === id
-                ? { ...todo, completed: completed, text: text }
-                : todo,
-            ),
-          );
-        }
-        if (!res.ok) {
-          throw new Error("Failed to update todo");
-        }
-      } catch (error) {
-        console.error("Error updating todo:", error);
-      }
-    });
-  };
-
-  const deleteTodo = async (id: number) => {
-    startTransition(async () => {
-      setOptimisticTodos({
-        type: "delete",
-        todo: todos.find((todo) => todo.id === id)!,
-      });
-      try {
-        const res = await fetch("/api/todos", {
-          method: "DELETE",
-          body: JSON.stringify({
-            id,
-          }),
-        });
-        if (res.ok) {
-          setTodos(todos.filter((todo) => todo.id !== id));
-        }
-        if (!res.ok) {
-          throw new Error("Failed to delete todo");
-        }
-      } catch (error) {
-        console.error("Error deleting todo:", error);
-      }
-    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      addTodo();
+      handleAddTodoClick();
     }
   };
 
-  const completedCount = optimisticTodos.filter(
-    (todo) => todo.completed,
-  ).length;
-  const totalCount = optimisticTodos.length;
+  const completedCount = todos.filter((todo) => todo.completed).length;
+  const totalCount = todos.length;
 
   const handleLogout = () => {
     signOut({ callbackUrl: "/" });
   };
 
-  if (status === "loading" || status === "unauthenticated" || loadingTodos) {
+  if (status === "loading" || status === "unauthenticated" || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -338,7 +189,7 @@ const TodosPage = () => {
                 />
               </div>
               <button
-                onClick={addTodo}
+                onClick={handleAddTodoClick}
                 disabled={newTodo.trim() === ""}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
@@ -350,7 +201,7 @@ const TodosPage = () => {
 
           {/* Todos List */}
           <div className="divide-y divide-gray-200">
-            {optimisticTodos.length === 0 ? (
+            {todos.length === 0 ? (
               <div className="p-8 text-center">
                 <div className="text-gray-400 mb-4">
                   <svg
@@ -375,7 +226,7 @@ const TodosPage = () => {
                 </p>
               </div>
             ) : (
-              optimisticTodos.map((todo, index) => (
+              todos.map((todo, index) => (
                 <div
                   key={index}
                   className="p-4 hover:bg-gray-50 transition-colors"
@@ -383,7 +234,11 @@ const TodosPage = () => {
                   <div className="flex items-center space-x-4">
                     <button
                       onClick={() =>
-                        updateTodo(todo.id, todo.text, !todo.completed)
+                        updateTodo.mutate({
+                          id: todo.id,
+                          text: todo.text,
+                          completed: !todo.completed,
+                        })
                       }
                       className={`flex-shrink-0 h-5 w-5 rounded border-2 flex items-center justify-center transition-colors ${
                         todo.completed
@@ -419,7 +274,7 @@ const TodosPage = () => {
                     </div>
 
                     <button
-                      onClick={() => deleteTodo(todo.id)}
+                      onClick={() => deleteTodo.mutate(todo.id)}
                       className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -431,7 +286,7 @@ const TodosPage = () => {
           </div>
 
           {/* Stats Footer */}
-          {optimisticTodos.length > 0 && (
+          {todos.length > 0 && (
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
               <div className="flex justify-between items-center text-sm text-gray-600">
                 <span>Celkem úkolů: {totalCount}</span>
@@ -443,7 +298,7 @@ const TodosPage = () => {
         </div>
 
         {/* Quick Stats Cards */}
-        {optimisticTodos.length > 0 && (
+        {todos.length > 0 && (
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-white rounded-lg shadow-sm p-4 text-center">
               <div className="text-2xl font-bold text-blue-600">
